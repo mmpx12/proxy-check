@@ -127,8 +127,12 @@ func main() {
 	op.Exemple("proxy-check -r -m 30 --socks5 -o valid-socks5.txt  -g")
 	op.Exemple("proxy-check -m 30 -o valid.txt -U 'https://raw.githubusercontent.com/mmpx12/proxy-list/master/proxies.txt'")
 	op.Exemple("proxy-check -u www.urltotest.me -T 6 /path/to/proxy")
-	op.Parse()
+	err := op.Parse()
 	op.Logo("Proxy-check", "smslant", nologo)
+
+	if err != nil || len(os.Args) == 1 {
+		op.Help()
+	}
 
 	if nbrvalid != "" {
 		maxvalid, _ = strconv.Atoi(nbrvalid)
