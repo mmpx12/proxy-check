@@ -118,7 +118,7 @@ func main() {
 	op.On("-r", "--randomize-file", "Shuffle proxies files", &random)
 	op.On("-t", "--thread NBR", "Number of threads", &goroutine)
 	op.On("-T", "--timeout SEC", "Set timeout (seconds)", &timeout)
-	op.On("-u", "--url TARGET", "set cookies", &url)
+	op.On("-u", "--url TARGET", "set URL for testing proxies", &url)
 	op.On("-f", "--proxies-file FILE", "files with proxies (proto://ip:port)", file)
 	op.On("-m", "--max-valid NBR", "Stop when NBR valid proxies are found", &nbrvalid)
 	op.On("-U", "--proxies-url URL", "url with proxies file", &urlfile)
@@ -126,7 +126,7 @@ func main() {
 	op.On("-o", "--output FILE", "File to write valid proxies", &output)
 	op.Exemple("proxy-check -r -m 30 --socks5 -o valid-socks5.txt  -g")
 	op.Exemple("proxy-check -m 30 -o valid.txt -U 'https://raw.githubusercontent.com/mmpx12/proxy-list/master/proxies.txt'")
-	op.Exemple("proxy-check -u www.urltotest.me -T 6 /path/to/proxy")
+	op.Exemple("proxy-check -u ipinfo.io -T 6 /path/to/proxy")
 	err := op.Parse()
 	op.Logo("Proxy-check", "smslant", nologo)
 
@@ -174,7 +174,7 @@ func main() {
 	}
 
 	if url == "" {
-		url = "http://ipinfo.io"
+		url = "http://checkip.amazonaws.com"
 	} else if !strings.Contains(url, "http://") && !strings.Contains(url, "https://") {
 		url = "http://" + url
 	}

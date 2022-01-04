@@ -40,7 +40,7 @@ Check all proxies from "/path/to/proxy" to url "www.urltotest.me" with a timeout
 
 #### Warnings:
 
-Some false negative might occurs. By default this will check to "ipinfo.io", but rate limit will set proxy as non working.
+By default this will check to "checkip.amazonaws.com" and some false negative might occurs (timeout, rate limit, flagged ip etc...).
 
 ### Install
 
