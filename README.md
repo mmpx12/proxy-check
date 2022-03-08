@@ -2,7 +2,7 @@
 
 Check if proxies are working (http, socks4 & socks5)
 
-![](.screenshot/socks5.png)
+![](.github/.screenshot/socks5.png)
 
 ### usage:
 
@@ -20,6 +20,7 @@ Check if proxies are working (http, socks4 & socks5)
 -U, --proxies-url=URL        url with proxies file
 -g, --github                 use github.com/mmpx12/proxy-list
 -o, --output=FILE            File to write valid proxies
+-v, --version                Print version and exit
 ```
 
 Local or remote should be on format: proto://ip:port
@@ -52,3 +53,5 @@ sudo make install
 # or 
 sudo make all
 ```
+
+There is also prebuild binaries [here](https://github.com/mmpx12/proxy-check/releases/latest).

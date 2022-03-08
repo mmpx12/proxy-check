@@ -26,6 +26,7 @@ var (
 	counter  int32
 	maxvalid int
 	delete   bool
+	version  = "1.0.0"
 )
 
 func HttpTest(proxy, urlTarget, timeout string) bool {
@@ -107,7 +108,7 @@ func writeResult(output, file string) {
 }
 
 func main() {
-	var nologo, socks5, socks4, httpp, all, random, github bool
+	var nologo, socks5, socks4, httpp, all, random, github, printversion bool
 	var file, url, goroutine, timeout, urlfile, output, nbrvalid string
 	//var timeout int
 	op := optionparser.NewOptionParser()
@@ -124,11 +125,17 @@ func main() {
 	op.On("-U", "--proxies-url URL", "url with proxies file", &urlfile)
 	op.On("-g", "--github", "use github.com/mmpx12/proxy-list", &github)
 	op.On("-o", "--output FILE", "File to write valid proxies", &output)
+	op.On("-v", "--version", "Print version and exit", &printversion)
 	op.Exemple("proxy-check -r -m 30 --socks5 -o valid-socks5.txt  -g")
 	op.Exemple("proxy-check -m 30 -o valid.txt -U 'https://raw.githubusercontent.com/mmpx12/proxy-list/master/proxies.txt'")
 	op.Exemple("proxy-check -u ipinfo.io -T 6 /path/to/proxy")
 	err := op.Parse()
 	op.Logo("Proxy-check", "smslant", nologo)
+
+	if printversion {
+		fmt.Println("version:", version)
+		os.Exit(1)
+	}
 
 	if err != nil || len(os.Args) == 1 {
 		op.Help()
