@@ -54,4 +54,16 @@ sudo make install
 sudo make all
 ```
 
+for **termux** you can do:
+
+```sh
+git clone https://github.com/mmpx12/proxy-check.git
+cd proxy-check
+make
+make termux-install
+# or
+make termux-all
+```
+
+
 There is also prebuild binaries [here](https://github.com/mmpx12/proxy-check/releases/latest).
