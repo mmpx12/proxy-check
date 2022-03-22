@@ -2,7 +2,7 @@
 
 Check if proxies are working (http, socks4 & socks5)
 
-![](.github/.screenshot/socks5.png)
+![](.github/.screenshot/proxy-check.png)
 
 ### usage:
 

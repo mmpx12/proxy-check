@@ -14,7 +14,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/k0kubun/go-ansi"
 	"github.com/mmpx12/optionparser"
+	"github.com/schollz/progressbar/v3"
 	"h12.io/socks"
 )
 
@@ -26,7 +28,7 @@ var (
 	counter  int32
 	maxvalid int
 	delete   bool
-	version  = "1.0.0"
+	version  = "1.0.1"
 )
 
 func HttpTest(proxy, urlTarget, timeout string) bool {
@@ -39,16 +41,13 @@ func HttpTest(proxy, urlTarget, timeout string) bool {
 	request, _ := http.NewRequestWithContext(ctx, "GET", urlTarget, nil)
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println("\033[31m[X] ", proxy, "\033[0m")
 		return false
 	}
 
 	if response.StatusCode != http.StatusOK {
-		fmt.Println("\033[31m[X] ", proxy, "\033[0m")
 		return false
 	}
 
-	fmt.Println("\033[32m[√] ", proxy, "\033[0m")
 	mu.Lock()
 	valid = append(valid, proxy)
 	mu.Unlock()
@@ -61,15 +60,12 @@ func SocksTest(proxy, urlTarget, timeout string) bool {
 	httpClient := &http.Client{Transport: tr}
 	resp, err := httpClient.Get(urlTarget)
 	if err != nil {
-		fmt.Println("\033[31m[X] ", proxy, "\033[0m")
 		return false
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("\033[31m[X] ", proxy, "\033[0m")
 		return false
 	}
-	fmt.Println("\033[32m[√] ", proxy, "\033[0m")
 	mu.Lock()
 	valid = append(valid, proxy)
 	mu.Unlock()
@@ -108,7 +104,7 @@ func writeResult(output, file string) {
 }
 
 func main() {
-	var nologo, socks5, socks4, httpp, all, random, github, printversion bool
+	var nologo, socks5, socks4, httpp, all, random, github, printversion, pb bool
 	var file, url, goroutine, timeout, urlfile, output, nbrvalid string
 	//var timeout int
 	op := optionparser.NewOptionParser()
@@ -123,6 +119,7 @@ func main() {
 	op.On("-f", "--proxies-file FILE", "files with proxies (proto://ip:port)", file)
 	op.On("-m", "--max-valid NBR", "Stop when NBR valid proxies are found", &nbrvalid)
 	op.On("-U", "--proxies-url URL", "url with proxies file", &urlfile)
+	op.On("-p", "--dis-progressbar", "Disable progress bar", &pb)
 	op.On("-g", "--github", "use github.com/mmpx12/proxy-list", &github)
 	op.On("-o", "--output FILE", "File to write valid proxies", &output)
 	op.On("-v", "--version", "Print version and exit", &printversion)
@@ -208,10 +205,40 @@ func main() {
 			})
 	}
 
-	for _, j := range Proxies {
+	var size int
+	if maxvalid > 0 {
+		size = maxvalid
+	} else {
+		size = len(Proxies)
+	}
+	bar := progressbar.NewOptions(size,
+		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetVisibility(!pb),
+		progressbar.OptionSetDescription("[green]"+strconv.Itoa(int(counter))),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]━[reset]",
+			SaucerHead:    "[green][dark_gray]",
+			SaucerPadding: "━",
+			BarStart:      "[light_gray][[dark_gray]",
+			BarEnd:        "[light_gray]][reset]",
+		}))
+
+	for i, j := range Proxies {
+
+		bar.Describe("[green]" + strconv.Itoa(int(counter)) + "[light_gray]|[red]" + strconv.Itoa(i-int(counter)) + "[light_gray]|[yellow]" + strconv.Itoa(size) + "[reset]")
 		mu.Lock()
 		if checkmax && counter >= int32(maxvalid) {
 			writeResult(output, file)
+			bar.Finish()
+			for _, v := range valid {
+				fmt.Println(v)
+			}
+			if delete {
+				os.Remove(file)
+			}
 			os.Exit(0)
 		}
 		mu.Unlock()
@@ -226,6 +253,7 @@ func main() {
 			}
 			if res == true {
 				mu.Lock()
+				bar.Add(1)
 				atomic.AddInt32(&counter, 1)
 				mu.Unlock()
 			}
@@ -234,4 +262,11 @@ func main() {
 		}(j, url, timeout)
 	}
 	wg.Wait()
+	bar.Finish()
+	for _, v := range valid {
+		fmt.Println(v)
+	}
+	if delete {
+		os.Remove(file)
+	}
 }
