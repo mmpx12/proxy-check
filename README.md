@@ -45,6 +45,14 @@ By default this will check to "checkip.amazonaws.com" and some false negative mi
 
 ### Install
 
+With one liner if **$GOROOT/bin/** is in **$PATH**:
+
+```sh
+go install github.com/mmpx12/proxy-check@latest
+```
+
+or from source with:
+
 ```sh
 git clone https://github.com/mmpx12/proxy-check.git
 cd proxy-check

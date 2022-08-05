@@ -28,7 +28,7 @@ var (
 	counter  int32
 	maxvalid int
 	delete   bool
-	version  = "1.0.1"
+	version  = "1.0.2"
 )
 
 func HttpTest(proxy, urlTarget, timeout string) bool {

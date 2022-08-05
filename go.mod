@@ -1,11 +1,11 @@
-module proxy-check
+module github.com/mmpx12/proxy-check
 
-go 1.18
+go 1.19
 
 require (
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
 	github.com/mmpx12/optionparser v1.0.4
-	github.com/schollz/progressbar/v3 v3.8.6
+	github.com/schollz/progressbar/v3 v3.9.0
 	h12.io/socks v1.0.3
 )
 
