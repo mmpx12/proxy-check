@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"net/url"
+	URL "net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +17,6 @@ import (
 	"github.com/k0kubun/go-ansi"
 	"github.com/mmpx12/optionparser"
 	"github.com/schollz/progressbar/v3"
-	"h12.io/socks"
 )
 
 var (
@@ -28,53 +27,47 @@ var (
 	counter  int32
 	maxvalid int
 	delete   bool
-	version  = "1.0.2"
+	file     string
+	version  = "1.0.3"
 )
 
-func HttpTest(proxy, urlTarget, timeout string) bool {
-	proxyURL, _ := url.Parse(proxy)
+func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
 	timeouts, _ := strconv.Atoi(timeout)
 	ctx, cncl := context.WithTimeout(context.Background(), time.Second*time.Duration(timeouts))
 	defer cncl()
-	transport := &http.Transport{Proxy: http.ProxyURL(proxyURL)}
-	client := &http.Client{Transport: transport}
-	request, _ := http.NewRequestWithContext(ctx, "GET", urlTarget, nil)
-	response, err := client.Do(request)
+	proxyURL, _ := URL.Parse(proxy)
+	client = &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		},
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", urlTarget, nil)
+	req.Header.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64)")
+	resp, err := client.Do(req)
+
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return false
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return false
-	}
-
-	mu.Lock()
-	valid = append(valid, proxy)
-	mu.Unlock()
-	return true
-}
-
-func SocksTest(proxy, urlTarget, timeout string) bool {
-	dialSocksProxy := socks.Dial(proxy + "?timeout=" + timeout + "s")
-	tr := &http.Transport{Dial: dialSocksProxy}
-	httpClient := &http.Client{Transport: tr}
-	resp, err := httpClient.Get(urlTarget)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return false
 	}
+
 	mu.Lock()
 	valid = append(valid, proxy)
 	mu.Unlock()
 	return true
 }
 
-func readLines(path string, http, socks4, socks5, all bool) {
-	file, err := os.Open(path)
+func readLines(http, socks4, socks5, all bool) {
+	file, err := os.Open(file)
 	if err != nil {
+		print(err.Error(), "\n")
+		os.Exit(1)
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
@@ -105,8 +98,7 @@ func writeResult(output, file string) {
 
 func main() {
 	var nologo, socks5, socks4, httpp, all, random, github, printversion, pb bool
-	var file, url, goroutine, timeout, urlfile, output, nbrvalid string
-	//var timeout int
+	var url, goroutine, timeout, urlfile, output, nbrvalid string
 	op := optionparser.NewOptionParser()
 	op.Banner = "Proxy tester\n\nUsage:\n"
 	op.On("-s", "--socks4", "Test socks4 proxies", &socks4)
@@ -116,7 +108,7 @@ func main() {
 	op.On("-t", "--thread NBR", "Number of threads", &goroutine)
 	op.On("-T", "--timeout SEC", "Set timeout (seconds)", &timeout)
 	op.On("-u", "--url TARGET", "set URL for testing proxies", &url)
-	op.On("-f", "--proxies-file FILE", "files with proxies (proto://ip:port)", file)
+	op.On("-f", "--proxies-file FILE", "files with proxies (proto://ip:port)", &file)
 	op.On("-m", "--max-valid NBR", "Stop when NBR valid proxies are found", &nbrvalid)
 	op.On("-U", "--proxies-url URL", "url with proxies file", &urlfile)
 	op.On("-p", "--dis-progressbar", "Disable progress bar", &pb)
@@ -127,6 +119,10 @@ func main() {
 	op.Exemple("proxy-check -m 30 -o valid.txt -U 'https://raw.githubusercontent.com/mmpx12/proxy-list/master/proxies.txt'")
 	op.Exemple("proxy-check -u ipinfo.io -T 6 /path/to/proxy")
 	err := op.Parse()
+	if err != nil {
+		print(err.Error(), "\n")
+		os.Exit(1)
+	}
 	op.Logo("Proxy-check", "smslant", nologo)
 
 	if printversion {
@@ -136,6 +132,7 @@ func main() {
 
 	if err != nil || len(os.Args) == 1 {
 		op.Help()
+		os.Exit(1)
 	}
 
 	if nbrvalid != "" {
@@ -145,8 +142,9 @@ func main() {
 		maxvalid = 0
 	}
 
-	if strings.Join(op.Extra, "") != "" || !github || urlfile == "" {
-		file = strings.Join(op.Extra, "")
+	opts := strings.Join(strings.Fields(strings.TrimSpace(strings.Join(op.Extra, ""))), " ")
+	if (opts != "" || !github || urlfile == "") && file == "" {
+		file = opts
 	} else if file == "" {
 		fmt.Println("Error: Need file or url with proxies")
 		os.Exit(1)
@@ -166,7 +164,11 @@ func main() {
 		rand.Seed(time.Now().UnixNano())
 		rand.Read(b)
 		file = fmt.Sprintf("proxies-%x.txt", b)
-		r, _ := http.Get(urlfile)
+		r, err := http.Get(urlfile)
+		if err != nil {
+			print(err.Error(), "\n")
+			os.Exit(1)
+		}
 		defer r.Body.Close()
 		f, _ := os.Create(file)
 		defer f.Close()
@@ -184,7 +186,7 @@ func main() {
 	}
 
 	if timeout == "" {
-		timeout = "5"
+		timeout = "3"
 	}
 
 	if goroutine == "" {
@@ -195,7 +197,7 @@ func main() {
 	goroutines, _ := strconv.Atoi(goroutine)
 	maxGoroutines := goroutines
 	guard := make(chan struct{}, maxGoroutines)
-	readLines(file, httpp, socks4, socks5, all)
+	readLines(httpp, socks4, socks5, all)
 
 	if random {
 		rand.Seed(time.Now().UnixNano())
@@ -226,6 +228,7 @@ func main() {
 			BarEnd:        "[light_gray]][reset]",
 		}))
 
+	var client *http.Client
 	for i, j := range Proxies {
 
 		bar.Describe("[green]" + strconv.Itoa(int(counter)) + "[light_gray]|[red]" + strconv.Itoa(i-int(counter)) + "[light_gray]|[yellow]" + strconv.Itoa(size) + "[reset]")
@@ -233,6 +236,7 @@ func main() {
 		if checkmax && counter >= int32(maxvalid) {
 			writeResult(output, file)
 			bar.Finish()
+			fmt.Println()
 			for _, v := range valid {
 				fmt.Println(v)
 			}
@@ -244,13 +248,10 @@ func main() {
 		mu.Unlock()
 		guard <- struct{}{}
 		wg.Add(1)
-		go func(j string, url string, timeOut string) {
+		go func() {
+			defer wg.Done()
 			var res bool
-			if strings.HasPrefix(j, "http://") {
-				res = HttpTest(j, url, timeOut)
-			} else {
-				res = SocksTest(j, url, timeOut)
-			}
+			res = ProxyTest(client, j, url, timeout)
 			if res == true {
 				mu.Lock()
 				bar.Add(1)
@@ -258,11 +259,11 @@ func main() {
 				mu.Unlock()
 			}
 			<-guard
-			wg.Done()
-		}(j, url, timeout)
+		}()
 	}
 	wg.Wait()
 	bar.Finish()
+	fmt.Println()
 	for _, v := range valid {
 		fmt.Println(v)
 	}
