@@ -20,15 +20,16 @@ import (
 )
 
 var (
-	Proxies  []string
-	mu       = &sync.Mutex{}
-	valid    []string
-	checkmax bool
-	counter  int32
-	maxvalid int
-	delete   bool
-	file     string
-	version  = "1.0.3"
+	Proxies    []string
+	mu         = &sync.Mutex{}
+	valid      []string
+	checkmax   bool
+	counter    int32
+	maxvalid   int
+	disableBar bool
+	delete     bool
+	file       string
+	version    = "1.0.3"
 )
 
 func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
@@ -50,13 +51,21 @@ func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
 		defer resp.Body.Close()
 	}
 	if err != nil {
+		if disableBar {
+			fmt.Println("\033[31m[X] ", proxy, "\033[0m")
+		}
 		return false
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		if disableBar {
+			fmt.Println("\033[31m[X] ", proxy, "\033[0m")
+		}
 		return false
 	}
-
+	if disableBar {
+		fmt.Println("\033[32m[√] ", proxy, "\033[0m")
+	}
 	mu.Lock()
 	valid = append(valid, proxy)
 	mu.Unlock()
@@ -97,7 +106,7 @@ func writeResult(output, file string) {
 }
 
 func main() {
-	var nologo, socks5, socks4, httpp, all, random, github, printversion, pb bool
+	var nologo, socks5, socks4, httpp, all, random, github, printversion bool
 	var url, goroutine, timeout, urlfile, output, nbrvalid string
 	op := optionparser.NewOptionParser()
 	op.Banner = "Proxy tester\n\nUsage:\n"
@@ -111,7 +120,7 @@ func main() {
 	op.On("-f", "--proxies-file FILE", "files with proxies (proto://ip:port)", &file)
 	op.On("-m", "--max-valid NBR", "Stop when NBR valid proxies are found", &nbrvalid)
 	op.On("-U", "--proxies-url URL", "url with proxies file", &urlfile)
-	op.On("-p", "--dis-progressbar", "Disable progress bar", &pb)
+	op.On("-p", "--dis-progressbar", "Disable progress bar", &disableBar)
 	op.On("-g", "--github", "use github.com/mmpx12/proxy-list", &github)
 	op.On("-o", "--output FILE", "File to write valid proxies", &output)
 	op.On("-v", "--version", "Print version and exit", &printversion)
@@ -218,7 +227,7 @@ func main() {
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionSetPredictTime(false),
 		progressbar.OptionClearOnFinish(),
-		progressbar.OptionSetVisibility(!pb),
+		progressbar.OptionSetVisibility(!disableBar),
 		progressbar.OptionSetDescription("[green]"+strconv.Itoa(int(counter))),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]━[reset]",
@@ -237,6 +246,7 @@ func main() {
 			writeResult(output, file)
 			bar.Finish()
 			fmt.Println()
+			fmt.Println("\033[4mValid proxies:\033[0m\n")
 			for _, v := range valid {
 				fmt.Println(v)
 			}
@@ -264,6 +274,7 @@ func main() {
 	wg.Wait()
 	bar.Finish()
 	fmt.Println()
+	fmt.Println("\033[4mValid proxies:\033[0m\n")
 	for _, v := range valid {
 		fmt.Println(v)
 	}

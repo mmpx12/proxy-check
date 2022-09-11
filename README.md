@@ -18,6 +18,7 @@ Check if proxies are working (http, socks4 & socks5)
 -f, --proxies-file=FILE      File to check proxy
 -m, --max-valid=NBR          Stop when NBR valid proxies are found
 -U, --proxies-url=URL        url with proxies file
+-p, --dis-progressbar        Disable progress bar
 -g, --github                 use github.com/mmpx12/proxy-list
 -o, --output=FILE            File to write valid proxies
 -v, --version                Print version and exit
@@ -25,7 +26,10 @@ Check if proxies are working (http, socks4 & socks5)
 
 Local or remote file with proxy should be on format: proto://ip:port
 
- 
+If you disable the progress bar `-p|--dis-progressbar` you will have the old ouptut:
+
+![](.github/.screenshot/old-output.png)
+
 ### Examples:
 
 Only check socks5 proxies from "https://raw.githubusercontent.com/mmpx12/proxy-list/master/proxies.txt" and stop after founding 30 valid proxies.
