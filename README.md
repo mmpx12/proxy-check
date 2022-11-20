@@ -11,6 +11,7 @@ Check if proxies are working (http, socks4 & socks5)
 -s, --socks4                 Test socks4 proxies
 -S, --socks5                 Test socks5 proxies
 -H, --http                   Test http proxies
+-i, --ip                     Test all proto if no proto is specified in input file
 -r, --randomize-file         Shuffle proxies files
 -t, --thread=NBR             Number of threads
 -T, --timeout=SEC            Set timeout (default 3 seconds)
@@ -24,7 +25,7 @@ Check if proxies are working (http, socks4 & socks5)
 -v, --version                Print version and exit
 ```
 
-Local or remote file with proxy should be on format: proto://ip:port
+Without **-i|--ip** flag local or remote file with proxy should be on format: proto://ip:port; If -i flag is set and no protocol is set for an ip, all protocols will be test.
 
 If you disable the progress bar `-p|--dis-progressbar` you will have the old ouptut:
 

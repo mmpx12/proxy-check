@@ -8,6 +8,7 @@ import (
 	"net/http"
 	URL "net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,9 +28,10 @@ var (
 	counter    int32
 	maxvalid   int
 	disableBar bool
+	noProto    bool
 	delete     bool
 	file       string
-	version    = "1.0.4"
+	version    = "1.0.5"
 )
 
 func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
@@ -80,13 +82,30 @@ func readLines(http, socks4, socks5, all bool) {
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
+	var proto = []string{"http://", "socks4://", "socks5://"}
 	for scanner.Scan() {
-		if strings.HasPrefix(scanner.Text(), "http://") && (http == true || all == true) {
-			Proxies = append(Proxies, scanner.Text())
-		} else if strings.HasPrefix(scanner.Text(), "socks4://") && (socks4 == true || all == true) {
-			Proxies = append(Proxies, scanner.Text())
-		} else if strings.HasPrefix(scanner.Text(), "socks5://") && (socks5 == true || all == true) {
-			Proxies = append(Proxies, scanner.Text())
+		if strings.HasPrefix(scanner.Text(), "http://") {
+			if http == true || all == true {
+				Proxies = append(Proxies, scanner.Text())
+			}
+		} else if strings.HasPrefix(scanner.Text(), "socks4://") {
+			if socks4 == true || all == true {
+				Proxies = append(Proxies, scanner.Text())
+			}
+		} else if strings.HasPrefix(scanner.Text(), "socks5://") {
+			if socks5 == true || all == true {
+				Proxies = append(Proxies, scanner.Text())
+			}
+		} else if noProto {
+			var ipv4 = regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|:[0-9]{1,5})){4})`)
+			if ipv4.MatchString(scanner.Text()) {
+				proxy := scanner.Text()
+				for _, i := range proto {
+					Proxies = append(Proxies, i+proxy)
+				}
+			}
+		} else {
+			fmt.Println("ok")
 		}
 	}
 }
@@ -119,6 +138,7 @@ func main() {
 	op.On("-u", "--url TARGET", "set URL for testing proxies", &url)
 	op.On("-f", "--proxies-file FILE", "files with proxies (proto://ip:port)", &file)
 	op.On("-m", "--max-valid NBR", "Stop when NBR valid proxies are found", &nbrvalid)
+	op.On("-i", "--ip", "Test all proto if no proto is specified in input", &noProto)
 	op.On("-U", "--proxies-url URL", "url with proxies file", &urlfile)
 	op.On("-p", "--dis-progressbar", "Disable progress bar", &disableBar)
 	op.On("-g", "--github", "use github.com/mmpx12/proxy-list", &github)
