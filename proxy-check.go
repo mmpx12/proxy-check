@@ -29,7 +29,7 @@ var (
 	disableBar bool
 	delete     bool
 	file       string
-	version    = "1.0.3"
+	version    = "1.0.4"
 )
 
 func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
@@ -273,6 +273,7 @@ func main() {
 	}
 	wg.Wait()
 	bar.Finish()
+	writeResult(output, file)
 	fmt.Println()
 	fmt.Println("\033[4mValid proxies:\033[0m\n")
 	for _, v := range valid {
