@@ -31,7 +31,7 @@ var (
 	noProto    bool
 	delete     bool
 	file       string
-	version    = "1.1.1"
+	version    = "1.1.2"
 )
 
 func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
@@ -104,8 +104,6 @@ func readLines(http, socks4, socks5, all bool) {
 					Proxies = append(Proxies, i+proxy)
 				}
 			}
-		} else {
-			fmt.Println("ok")
 		}
 	}
 }
