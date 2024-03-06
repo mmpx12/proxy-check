@@ -31,7 +31,7 @@ var (
 	noProto    bool
 	delete     bool
 	file       string
-	version    = "1.1.2"
+	version    = "1.1.3"
 )
 
 func ProxyTest(client *http.Client, proxy, urlTarget, timeout string) bool {
